@@ -1,1 +1,22 @@
-{"train_time_seconds": 289.3106390639987}
+{
+  "run_name": "EfficientNetB0",
+  "class_names": [
+    "bicycle",
+    "car",
+    "motorcycle",
+    "plane",
+    "ship",
+    "train"
+  ],
+  "num_classes": 6,
+  "img_size": [
+    224,
+    224
+  ],
+  "batch_size": 24,
+  "fine_tune_start_epoch": 10,
+  "total_epochs": 16,
+  "train_time_seconds": 303.59449551299986,
+  "best_model_path": "models/EfficientNetB0_best.keras",
+  "last_model_path": "models/EfficientNetB0_last.keras"
+}

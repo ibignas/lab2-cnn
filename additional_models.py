@@ -124,11 +124,27 @@ for name, (ModelClass, preprocess_fn) in models_to_train.items():
     # Save artifacts
     merged_hist = {k: hist_head.history.get(k, []) + hist_ft.history.get(k, []) for k in
                    set(hist_head.history) | set(hist_ft.history)}
+    fine_tune_start_epoch = len(hist_head.history.get("loss", []))
+
     pd.DataFrame(merged_hist).to_csv(f"results/history/{name}_history.csv", index_label="epoch")
     with open(f"results/history/{name}_history.json", "w") as f:
-        json.dump({"history": merged_hist, "fine_tune_start_epoch": len(hist_head.history["loss"])}, f)
+        json.dump({"history": merged_hist, "fine_tune_start_epoch": fine_tune_start_epoch}, f, indent=2)
+
+    metadata = {
+        "run_name": name,
+        "class_names": list(class_names),
+        "num_classes": NUM_CLASSES,
+        "img_size": list(IMG_SIZE),
+        "batch_size": BATCH_SIZE,
+        "fine_tune_start_epoch": fine_tune_start_epoch,
+        "total_epochs": len(merged_hist.get("loss", [])),
+        "train_time_seconds": train_time,
+        "best_model_path": f"models/{name}_best.keras",
+        "last_model_path": f"models/{name}_last.keras"
+    }
+
     with open(f"results/metadata/{name}_metadata.json", "w") as f:
-        json.dump({"train_time_seconds": train_time}, f)
+        json.dump(metadata, f, indent=2)
 
     # --- Task 3 Evaluation for new models ---
     best_model = keras.models.load_model(f"models/{name}_best.keras")

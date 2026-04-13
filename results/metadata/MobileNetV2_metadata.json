@@ -1,1 +1,22 @@
-{"train_time_seconds": 285.22091983099926}
+{
+  "run_name": "MobileNetV2",
+  "class_names": [
+    "bicycle",
+    "car",
+    "motorcycle",
+    "plane",
+    "ship",
+    "train"
+  ],
+  "num_classes": 6,
+  "img_size": [
+    224,
+    224
+  ],
+  "batch_size": 24,
+  "fine_tune_start_epoch": 10,
+  "total_epochs": 19,
+  "train_time_seconds": 259.9177241639991,
+  "best_model_path": "models/MobileNetV2_best.keras",
+  "last_model_path": "models/MobileNetV2_last.keras"
+}

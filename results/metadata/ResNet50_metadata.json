@@ -1,1 +1,22 @@
-{"train_time_seconds": 298.5134511520009}
+{
+  "run_name": "ResNet50",
+  "class_names": [
+    "bicycle",
+    "car",
+    "motorcycle",
+    "plane",
+    "ship",
+    "train"
+  ],
+  "num_classes": 6,
+  "img_size": [
+    224,
+    224
+  ],
+  "batch_size": 24,
+  "fine_tune_start_epoch": 10,
+  "total_epochs": 17,
+  "train_time_seconds": 271.36866323899994,
+  "best_model_path": "models/ResNet50_best.keras",
+  "last_model_path": "models/ResNet50_last.keras"
+}
