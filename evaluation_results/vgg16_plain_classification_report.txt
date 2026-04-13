@@ -1,0 +1,23 @@
+Model: vgg16_plain
+
+Classification Report:
+              precision    recall  f1-score   support
+
+     bicycle     0.9938    0.9938    0.9938       160
+         car     0.9936    0.9810    0.9873       158
+  motorcycle     0.9753    0.9875    0.9814       160
+       plane     1.0000    0.9686    0.9840       159
+        ship     0.9697    1.0000    0.9846       160
+       train     0.9938    0.9938    0.9938       160
+
+    accuracy                         0.9875       957
+   macro avg     0.9877    0.9874    0.9875       957
+weighted avg     0.9877    0.9875    0.9875       957
+
+Confusion Matrix:
+[[159   0   1   0   0   0]
+ [  0 155   2   0   0   1]
+ [  1   1 158   0   0   0]
+ [  0   0   0 154   5   0]
+ [  0   0   0   0 160   0]
+ [  0   0   1   0   0 159]]

@@ -1,6 +1,12 @@
 from tensorflow import keras
+from tensorflow.keras import mixed_precision
 import tensorflow as tf
 from pathlib import Path
+import json
+import time
+import pandas as pd
+
+mixed_precision.set_global_policy("mixed_float16")
 
 gpus = tf.config.list_physical_devices("GPU")
 if gpus:
@@ -12,7 +18,7 @@ print("GPUs:", tf.config.list_physical_devices("GPU"))
 tf.config.optimizer.set_jit(False)
 
 IMG_SIZE = (224, 224)
-BATCH_SIZE = 16
+BATCH_SIZE = 24
 SEED = 42
 AUTOTUNE = tf.data.AUTOTUNE
 
@@ -73,7 +79,8 @@ def prepare(ds, training=False, augment=False):
 
     return ds.prefetch(AUTOTUNE)
 
-NUM_CLASSES = 6
+class_names = train_ds.class_names
+NUM_CLASSES = len(class_names)
 INPUT_SHAPE = (224, 224, 3)
 
 def build_model(num_classes=NUM_CLASSES):
@@ -89,7 +96,7 @@ def build_model(num_classes=NUM_CLASSES):
     x = keras.layers.GlobalAveragePooling2D()(x)
     x = keras.layers.Dense(256, activation="relu")(x)
     x = keras.layers.Dropout(0.3)(x)
-    outputs = keras.layers.Dense(num_classes, activation="softmax")(x)
+    outputs = keras.layers.Dense(num_classes, activation="softmax", dtype="float32")(x)
 
     model = keras.Model(inputs, outputs)
 
@@ -122,12 +129,65 @@ def get_callbacks(run):
         verbose=1
     )
 
-    return [best_ckpt, last_ckpt, early_stop]
+    reduce_lr = keras.callbacks.ReduceLROnPlateau(
+        monitor="val_loss",
+        factor=0.2,
+        patience=2,
+        verbose=1,
+        mode="min",
+        min_lr=1e-7
+    )
 
-def train_model(run, train_data, val_data, initial_epochs=10, fine_tune_epochs=10):
+    return [best_ckpt, last_ckpt, early_stop, reduce_lr]
+
+def merge_histories(history_head, history_finetune):
+    merged = {}
+    keys = set(history_head.history.keys()) | set(history_finetune.history.keys())
+
+    for key in keys:
+        head_values = history_head.history.get(key, [])
+        ft_values = history_finetune.history.get(key, [])
+        merged[key] = head_values + ft_values
+
+    return merged
+
+
+def save_run_artifacts(run, history_head, history_finetune, train_time_seconds, class_names):
+    merged_history = merge_histories(history_head, history_finetune)
+    fine_tune_start_epoch = len(history_head.history.get("loss", []))
+
+    history_json_path = Path("results/history") / f"{run}_history.json"
+    history_csv_path = Path("results/history") / f"{run}_history.csv"
+    metadata_json_path = Path("results/metadata") / f"{run}_metadata.json"
+
+    with open(history_json_path, "w", encoding="utf-8") as f:
+        json.dump(merged_history, f, indent=2)
+
+    history_df = pd.DataFrame(merged_history)
+    history_df.index.name = "epoch"
+    history_df.to_csv(history_csv_path)
+
+    metadata = {
+        "run_name": run,
+        "class_names": list(class_names),
+        "num_classes": len(class_names),
+        "img_size": list(IMG_SIZE),
+        "batch_size": BATCH_SIZE,
+        "fine_tune_start_epoch": fine_tune_start_epoch,
+        "total_epochs": len(merged_history.get("loss", [])),
+        "train_time_seconds": train_time_seconds,
+        "best_model_path": f"models/{run}_best.keras",
+        "last_model_path": f"models/{run}_last.keras",
+    }
+
+    with open(metadata_json_path, "w", encoding="utf-8") as f:
+        json.dump(metadata, f, indent=2)
+
+def train_model(run, train_data, val_data, class_names, initial_epochs=10, fine_tune_epochs=10):
     model, base_model = build_model()
-
     callbacks = get_callbacks(run)
+
+    start_time = time.perf_counter()
 
     history_head = model.fit(
         train_data,
@@ -155,9 +215,23 @@ def train_model(run, train_data, val_data, initial_epochs=10, fine_tune_epochs=1
         callbacks=callbacks
     )
 
+    train_time_seconds = time.perf_counter() - start_time
+
+    save_run_artifacts(
+        run=run,
+        history_head=history_head,
+        history_finetune=history_finetune,
+        train_time_seconds=train_time_seconds,
+        class_names=class_names
+    )
+
     return model, history_head, history_finetune
 
 Path("models").mkdir(exist_ok=True)
+
+Path("results").mkdir(exist_ok=True)
+Path("results/history").mkdir(parents=True, exist_ok=True)
+Path("results/metadata").mkdir(parents=True, exist_ok=True)
 
 train_ds_plain = prepare(train_ds, training=True, augment=False)
 val_ds_final = prepare(val_ds, training=False, augment=False)
@@ -167,8 +241,9 @@ vgg_plain_model, plain_head_hist, plain_ft_hist = train_model(
     run="vgg16_plain",
     train_data=train_ds_plain,
     val_data=val_ds_final,
+    class_names=class_names,
     initial_epochs=10,
-    fine_tune_epochs=10
+    fine_tune_epochs=20
 )
 
 train_ds_aug = prepare(train_ds, training=True, augment=True)
@@ -177,6 +252,7 @@ vgg_aug_model, aug_head_hist, aug_ft_hist = train_model(
     run="vgg16_aug",
     train_data=train_ds_aug,
     val_data=val_ds_final,
+    class_names=class_names,
     initial_epochs=10,
-    fine_tune_epochs=10
+    fine_tune_epochs=20
 )

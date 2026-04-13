@@ -1,0 +1,12 @@
+              precision    recall  f1-score   support
+
+     bicycle     0.9938    1.0000    0.9969       160
+         car     0.9871    0.9684    0.9776       158
+  motorcycle     1.0000    0.9875    0.9937       160
+       plane     1.0000    0.9686    0.9840       159
+        ship     0.9634    0.9875    0.9753       160
+       train     0.9697    1.0000    0.9846       160
+
+    accuracy                         0.9854       957
+   macro avg     0.9857    0.9853    0.9854       957
+weighted avg     0.9856    0.9854    0.9854       957

@@ -1,0 +1,22 @@
+{
+  "run_name": "vgg16_aug",
+  "class_names": [
+    "bicycle",
+    "car",
+    "motorcycle",
+    "plane",
+    "ship",
+    "train"
+  ],
+  "num_classes": 6,
+  "img_size": [
+    224,
+    224
+  ],
+  "batch_size": 24,
+  "fine_tune_start_epoch": 10,
+  "total_epochs": 15,
+  "train_time_seconds": 218.12643824299994,
+  "best_model_path": "models/vgg16_aug_best.keras",
+  "last_model_path": "models/vgg16_aug_last.keras"
+}
